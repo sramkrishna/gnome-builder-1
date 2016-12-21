@@ -40,6 +40,7 @@ libide_1_0_la_public_headers =                            \
 	buildsystem/ide-builder.h                         \
 	buildsystem/ide-configuration-manager.h           \
 	buildsystem/ide-configuration.h                   \
+	buildsystem/ide-configuration-provider.h          \
 	buildsystem/ide-environment-variable.h            \
 	buildsystem/ide-environment.h                     \
 	buildsystem/ide-simple-builder.h                  \
@@ -208,6 +209,7 @@ libide_1_0_la_public_sources =                            \
 	buildsystem/ide-builder.c                         \
 	buildsystem/ide-configuration-manager.c           \
 	buildsystem/ide-configuration.c                   \
+	buildsystem/ide-configuration-provider.c          \
 	buildsystem/ide-environment-variable.c            \
 	buildsystem/ide-environment.c                     \
 	buildsystem/ide-simple-builder.c                  \
