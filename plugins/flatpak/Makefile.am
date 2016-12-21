@@ -10,6 +10,8 @@ plugin_LTLIBRARIES = libflatpak-plugin.la
 dist_plugin_DATA = flatpak.plugin
 
 libflatpak_plugin_la_SOURCES = \
+	gbp-flatpak-configuration-provider.c \
+	gbp-flatpak-configuration-provider.h \
 	gbp-flatpak-runtime-provider.c \
 	gbp-flatpak-runtime-provider.h \
 	gbp-flatpak-runtime.c \
