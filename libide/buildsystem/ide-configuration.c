@@ -33,10 +33,8 @@
 #include "runtimes/ide-runtime-manager.h"
 #include "runtimes/ide-runtime.h"
 
-struct _IdeConfiguration
+typedef struct
 {
-  IdeObject       parent_instance;
-
   gchar          *config_opts;
   gchar          *device_id;
   gchar          *display_name;
@@ -58,9 +56,9 @@ struct _IdeConfiguration
   guint           dirty : 1;
   guint           debug : 1;
   guint           is_snapshot : 1;
-};
+} IdeConfigurationPrivate;
 
-G_DEFINE_TYPE (IdeConfiguration, ide_configuration, IDE_TYPE_OBJECT)
+G_DEFINE_TYPE_WITH_PRIVATE (IdeConfiguration, ide_configuration, IDE_TYPE_OBJECT)
 
 enum {
   PROP_0,
@@ -137,13 +135,15 @@ static void
 ide_configuration_set_id (IdeConfiguration *self,
                           const gchar      *id)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (id != NULL);
 
-  if (g_strcmp0 (id, self->id) != 0)
+  if (g_strcmp0 (id, priv->id) != 0)
     {
-      g_free (self->id);
-      self->id = g_strdup (id);
+      g_free (priv->id);
+      priv->id = g_strdup (id);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_ID]);
     }
 }
@@ -155,12 +155,13 @@ ide_configuration_device_manager_items_changed (IdeConfiguration *self,
                                                 guint             removed,
                                                 IdeDeviceManager *device_manager)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   IdeDevice *device;
 
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (IDE_IS_DEVICE_MANAGER (device_manager));
 
-  device = ide_device_manager_get_device (device_manager, self->device_id);
+  device = ide_device_manager_get_device (device_manager, priv->device_id);
 
   if (device != NULL)
     ide_device_prepare_configuration (device, self);
@@ -173,12 +174,13 @@ ide_configuration_runtime_manager_items_changed (IdeConfiguration  *self,
                                                  guint              removed,
                                                  IdeRuntimeManager *runtime_manager)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   IdeRuntime *runtime;
 
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (IDE_IS_RUNTIME_MANAGER (runtime_manager));
 
-  runtime = ide_runtime_manager_get_runtime (runtime_manager, self->runtime_id);
+  runtime = ide_runtime_manager_get_runtime (runtime_manager, priv->runtime_id);
 
   if (runtime != NULL)
     ide_runtime_prepare_configuration (runtime, self);
@@ -238,19 +240,20 @@ static void
 ide_configuration_finalize (GObject *object)
 {
   IdeConfiguration *self = (IdeConfiguration *)object;
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
 
-  g_clear_object (&self->environment);
-  g_clear_object (&self->prebuild);
-  g_clear_object (&self->postbuild);
+  g_clear_object (&priv->environment);
+  g_clear_object (&priv->prebuild);
+  g_clear_object (&priv->postbuild);
 
-  g_clear_pointer (&self->internal, g_hash_table_unref);
-  g_clear_pointer (&self->config_opts, g_free);
-  g_clear_pointer (&self->device_id, g_free);
-  g_clear_pointer (&self->display_name, g_free);
-  g_clear_pointer (&self->id, g_free);
-  g_clear_pointer (&self->prefix, g_free);
-  g_clear_pointer (&self->runtime_id, g_free);
-  g_clear_pointer (&self->app_id, g_free);
+  g_clear_pointer (&priv->internal, g_hash_table_unref);
+  g_clear_pointer (&priv->config_opts, g_free);
+  g_clear_pointer (&priv->device_id, g_free);
+  g_clear_pointer (&priv->display_name, g_free);
+  g_clear_pointer (&priv->id, g_free);
+  g_clear_pointer (&priv->prefix, g_free);
+  g_clear_pointer (&priv->runtime_id, g_free);
+  g_clear_pointer (&priv->app_id, g_free);
 
   G_OBJECT_CLASS (ide_configuration_parent_class)->finalize (object);
 }
@@ -496,15 +499,17 @@ ide_configuration_class_init (IdeConfigurationClass *klass)
 static void
 ide_configuration_init (IdeConfiguration *self)
 {
-  self->device_id = g_strdup ("local");
-  self->runtime_id = g_strdup ("host");
-  self->debug = TRUE;
-  self->environment = ide_environment_new ();
-  self->parallelism = -1;
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
 
-  self->internal = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _value_free);
+  priv->device_id = g_strdup ("local");
+  priv->runtime_id = g_strdup ("host");
+  priv->debug = TRUE;
+  priv->environment = ide_environment_new ();
+  priv->parallelism = -1;
 
-  g_signal_connect_object (self->environment,
+  priv->internal = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, _value_free);
+
+  g_signal_connect_object (priv->environment,
                            "items-changed",
                            G_CALLBACK (ide_configuration_environment_changed),
                            self,
@@ -533,25 +538,29 @@ ide_configuration_new (IdeContext  *context,
 const gchar *
 ide_configuration_get_device_id (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->device_id;
+  return priv->device_id;
 }
 
 void
 ide_configuration_set_device_id (IdeConfiguration *self,
                                  const gchar      *device_id)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (device_id != NULL);
 
-  if (g_strcmp0 (device_id, self->device_id) != 0)
+  if (g_strcmp0 (device_id, priv->device_id) != 0)
     {
       IdeContext *context;
       IdeDeviceManager *device_manager;
 
-      g_free (self->device_id);
-      self->device_id = g_strdup (device_id);
+      g_free (priv->device_id);
+      priv->device_id = g_strdup (device_id);
 
       ide_configuration_set_dirty (self, TRUE);
 
@@ -575,6 +584,7 @@ ide_configuration_set_device_id (IdeConfiguration *self,
 IdeDevice *
 ide_configuration_get_device (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   IdeDeviceManager *device_manager;
   IdeContext *context;
 
@@ -583,7 +593,7 @@ ide_configuration_get_device (IdeConfiguration *self)
   context = ide_object_get_context (IDE_OBJECT (self));
   device_manager = ide_context_get_device_manager (context);
 
-  return ide_device_manager_get_device (device_manager, self->device_id);
+  return ide_device_manager_get_device (device_manager, priv->device_id);
 }
 
 void
@@ -612,45 +622,53 @@ ide_configuration_set_device (IdeConfiguration *self,
 const gchar *
 ide_configuration_get_app_id (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->app_id;
+  return priv->app_id;
 }
 
 void
 ide_configuration_set_app_id (IdeConfiguration *self,
                               const gchar      *app_id)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (app_id != NULL);
 
-  g_free (self->app_id);
+  g_free (priv->app_id);
 
-  self->app_id = g_strdup (app_id);
+  priv->app_id = g_strdup (app_id);
 }
 
 const gchar *
 ide_configuration_get_runtime_id (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->runtime_id;
+  return priv->runtime_id;
 }
 
 void
 ide_configuration_set_runtime_id (IdeConfiguration *self,
                                   const gchar      *runtime_id)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (runtime_id != NULL);
 
-  if (g_strcmp0 (runtime_id, self->runtime_id) != 0)
+  if (g_strcmp0 (runtime_id, priv->runtime_id) != 0)
     {
       IdeRuntimeManager *runtime_manager;
       IdeContext *context;
 
-      g_free (self->runtime_id);
-      self->runtime_id = g_strdup (runtime_id);
+      g_free (priv->runtime_id);
+      priv->runtime_id = g_strdup (runtime_id);
 
       ide_configuration_set_dirty (self, TRUE);
 
@@ -674,6 +692,7 @@ ide_configuration_set_runtime_id (IdeConfiguration *self,
 IdeRuntime *
 ide_configuration_get_runtime (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   IdeRuntimeManager *runtime_manager;
   IdeContext *context;
 
@@ -682,7 +701,7 @@ ide_configuration_get_runtime (IdeConfiguration *self)
   context = ide_object_get_context (IDE_OBJECT (self));
   runtime_manager = ide_context_get_runtime_manager (context);
 
-  return ide_runtime_manager_get_runtime (runtime_manager, self->runtime_id);
+  return ide_runtime_manager_get_runtime (runtime_manager, priv->runtime_id);
 }
 
 void
@@ -711,19 +730,23 @@ ide_configuration_set_runtime (IdeConfiguration *self,
 gchar **
 ide_configuration_get_environ (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return ide_environment_get_environ (self->environment);
+  return ide_environment_get_environ (priv->environment);
 }
 
 const gchar *
 ide_configuration_getenv (IdeConfiguration *self,
                           const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
   g_return_val_if_fail (key != NULL, NULL);
 
-  return ide_environment_getenv (self->environment, key);
+  return ide_environment_getenv (priv->environment, key);
 }
 
 void
@@ -731,38 +754,46 @@ ide_configuration_setenv (IdeConfiguration *self,
                           const gchar      *key,
                           const gchar      *value)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (key != NULL);
 
-  ide_environment_setenv (self->environment, key, value);
+  ide_environment_setenv (priv->environment, key, value);
 }
 
 const gchar *
 ide_configuration_get_id (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->id;
+  return priv->id;
 }
 
 const gchar *
 ide_configuration_get_prefix (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->prefix;
+  return priv->prefix;
 }
 
 void
 ide_configuration_set_prefix (IdeConfiguration *self,
                               const gchar      *prefix)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
 
-  if (g_strcmp0 (prefix, self->prefix) != 0)
+  if (g_strcmp0 (prefix, priv->prefix) != 0)
     {
-      g_free (self->prefix);
-      self->prefix = g_strdup (prefix);
+      g_free (priv->prefix);
+      priv->prefix = g_strdup (prefix);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_PREFIX]);
       ide_configuration_set_dirty (self, TRUE);
     }
@@ -771,28 +802,32 @@ ide_configuration_set_prefix (IdeConfiguration *self,
 gint
 ide_configuration_get_parallelism (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), -1);
 
-  if (self->parallelism == -1)
+  if (priv->parallelism == -1)
     {
       g_autoptr(GSettings) settings = g_settings_new ("org.gnome.builder.build");
 
       return g_settings_get_int (settings, "parallel");
     }
 
-  return self->parallelism;
+  return priv->parallelism;
 }
 
 void
 ide_configuration_set_parallelism (IdeConfiguration *self,
                                    gint              parallelism)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
   g_return_if_fail (parallelism >= -1);
 
-  if (parallelism != self->parallelism)
+  if (parallelism != priv->parallelism)
     {
-      self->parallelism = parallelism;
+      priv->parallelism = parallelism;
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_PARALLELISM]);
     }
 }
@@ -800,22 +835,26 @@ ide_configuration_set_parallelism (IdeConfiguration *self,
 gboolean
 ide_configuration_get_debug (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), FALSE);
 
-  return self->debug;
+  return priv->debug;
 }
 
 void
 ide_configuration_set_debug (IdeConfiguration *self,
                              gboolean          debug)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
 
   debug = !!debug;
 
-  if (debug != self->debug)
+  if (debug != priv->debug)
     {
-      self->debug = debug;
+      priv->debug = debug;
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_DEBUG]);
       ide_configuration_set_dirty (self, TRUE);
     }
@@ -824,21 +863,25 @@ ide_configuration_set_debug (IdeConfiguration *self,
 const gchar *
 ide_configuration_get_display_name (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->display_name;
+  return priv->display_name;
 }
 
 void
 ide_configuration_set_display_name (IdeConfiguration *self,
                                     const gchar      *display_name)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
 
-  if (g_strcmp0 (display_name, self->display_name) != 0)
+  if (g_strcmp0 (display_name, priv->display_name) != 0)
     {
-      g_free (self->display_name);
-      self->display_name = g_strdup (display_name);
+      g_free (priv->display_name);
+      priv->display_name = g_strdup (display_name);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_DISPLAY_NAME]);
       ide_configuration_emit_changed (self);
     }
@@ -847,9 +890,11 @@ ide_configuration_set_display_name (IdeConfiguration *self,
 gboolean
 ide_configuration_get_dirty (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), FALSE);
 
-  return self->dirty;
+  return priv->dirty;
 }
 
 static gboolean
@@ -860,6 +905,7 @@ propagate_dirty_bit (gpointer user_data)
   g_autofree gchar *id = NULL;
   IdeConfigurationManager *config_manager;
   IdeConfiguration *config;
+  IdeConfigurationPrivate *config_priv;
   guint sequence;
 
   g_assert (data != NULL);
@@ -871,10 +917,11 @@ propagate_dirty_bit (gpointer user_data)
 
   config_manager = ide_context_get_configuration_manager (context);
   config = ide_configuration_manager_get_configuration (config_manager, id);
+  config_priv = ide_configuration_get_instance_private (config);
 
   if (config != NULL)
     {
-      if (sequence == config->sequence)
+      if (sequence == config_priv->sequence)
         ide_configuration_set_dirty (config, FALSE);
     }
 
@@ -885,15 +932,17 @@ void
 ide_configuration_set_dirty (IdeConfiguration *self,
                              gboolean          dirty)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   IDE_ENTRY;
 
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
 
   dirty = !!dirty;
 
-  if (dirty != self->dirty)
+  if (dirty != priv->dirty)
     {
-      self->dirty = dirty;
+      priv->dirty = dirty;
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_DIRTY]);
     }
 
@@ -904,11 +953,11 @@ ide_configuration_set_dirty (IdeConfiguration *self,
        * can queue a writeback of the configuration. If we are
        * clearing the dirty bit, then we don't need to do this.
        */
-      self->sequence++;
-      IDE_TRACE_MSG ("configuration set dirty with sequence %u", self->sequence);
+      priv->sequence++;
+      IDE_TRACE_MSG ("configuration set dirty with sequence %u", priv->sequence);
       ide_configuration_emit_changed (self);
     }
-  else if (self->is_snapshot)
+  else if (priv->is_snapshot)
     {
       gpointer *data;
 
@@ -919,8 +968,8 @@ ide_configuration_set_dirty (IdeConfiguration *self,
        */
       data = g_new0 (gpointer, 3);
       data[0] = g_object_ref (ide_object_get_context (IDE_OBJECT (self)));
-      data[1] = g_strdup (self->id);
-      data[2] = GUINT_TO_POINTER (self->sequence);
+      data[1] = g_strdup (priv->id);
+      data[2] = GUINT_TO_POINTER (priv->sequence);
       g_timeout_add (0, propagate_dirty_bit, data);
     }
 
@@ -935,9 +984,11 @@ ide_configuration_set_dirty (IdeConfiguration *self,
 IdeEnvironment *
 ide_configuration_get_environment (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->environment;
+  return priv->environment;
 }
 
 void
@@ -955,21 +1006,25 @@ ide_configuration_set_environment (IdeConfiguration *self,
 const gchar *
 ide_configuration_get_config_opts (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  return self->config_opts;
+  return priv->config_opts;
 }
 
 void
 ide_configuration_set_config_opts (IdeConfiguration *self,
                                    const gchar      *config_opts)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_if_fail (IDE_IS_CONFIGURATION (self));
 
-  if (g_strcmp0 (config_opts, self->config_opts) != 0)
+  if (g_strcmp0 (config_opts, priv->config_opts) != 0)
     {
-      g_free (self->config_opts);
-      self->config_opts = g_strdup (config_opts);
+      g_free (priv->config_opts);
+      priv->config_opts = g_strdup (config_opts);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_CONFIG_OPTS]);
       ide_configuration_set_dirty (self, TRUE);
     }
@@ -986,6 +1041,8 @@ ide_configuration_set_config_opts (IdeConfiguration *self,
 IdeConfiguration *
 ide_configuration_snapshot (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+  IdeConfigurationPrivate *copy_priv;
   IdeConfiguration *copy;
   IdeContext *context;
   const gchar *key;
@@ -997,31 +1054,32 @@ ide_configuration_snapshot (IdeConfiguration *self)
   context = ide_object_get_context (IDE_OBJECT (self));
 
   copy = g_object_new (IDE_TYPE_CONFIGURATION,
-                       "config-opts", self->config_opts,
+                       "config-opts", priv->config_opts,
                        "context", context,
-                       "device-id", self->device_id,
-                       "display-name", self->display_name,
-                       "id", self->id,
-                       "parallelism", self->parallelism,
-                       "prefix", self->prefix,
-                       "runtime-id", self->runtime_id,
+                       "device-id", priv->device_id,
+                       "display-name", priv->display_name,
+                       "id", priv->id,
+                       "parallelism", priv->parallelism,
+                       "prefix", priv->prefix,
+                       "runtime-id", priv->runtime_id,
                        NULL);
 
-  copy->environment = ide_environment_copy (self->environment);
+  copy_priv = ide_configuration_get_instance_private (copy);
+  copy_priv->environment = ide_environment_copy (priv->environment);
 
-  if (self->prebuild)
-    copy->prebuild = ide_build_command_queue_copy (self->prebuild);
+  if (priv->prebuild)
+    copy_priv->prebuild = ide_build_command_queue_copy (priv->prebuild);
 
-  if (self->postbuild)
-    copy->postbuild = ide_build_command_queue_copy (self->postbuild);
+  if (priv->postbuild)
+    copy_priv->postbuild = ide_build_command_queue_copy (priv->postbuild);
 
-  g_hash_table_iter_init (&iter, self->internal);
+  g_hash_table_iter_init (&iter, priv->internal);
   while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
-    g_hash_table_insert (copy->internal, g_strdup (key), _value_copy (value));
+    g_hash_table_insert (copy_priv->internal, g_strdup (key), _value_copy (value));
 
-  copy->dirty = self->dirty;
-  copy->is_snapshot = TRUE;
-  copy->sequence = self->sequence;
+  copy_priv->dirty = priv->dirty;
+  copy_priv->is_snapshot = TRUE;
+  copy_priv->sequence = priv->sequence;
 
   return copy;
 }
@@ -1037,17 +1095,20 @@ ide_configuration_snapshot (IdeConfiguration *self)
 IdeConfiguration *
 ide_configuration_duplicate (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+  IdeConfigurationPrivate *copy_priv;
   static gint next_counter = 2;
   IdeConfiguration *copy;
 
   copy = ide_configuration_snapshot (self);
+  copy_priv = ide_configuration_get_instance_private (copy);
 
-  g_free (copy->id);
-  g_free (copy->display_name);
+  g_free (copy_priv->id);
+  g_free (copy_priv->display_name);
 
-  copy->id = g_strdup_printf ("%s %d", self->id, next_counter++);
-  copy->display_name = g_strdup_printf ("%s Copy", self->display_name);
-  copy->is_snapshot = FALSE;
+  copy_priv->id = g_strdup_printf ("%s %d", priv->id, next_counter++);
+  copy_priv->display_name = g_strdup_printf ("%s Copy", priv->display_name);
+  copy_priv->is_snapshot = FALSE;
 
   return copy;
 }
@@ -1069,9 +1130,11 @@ ide_configuration_duplicate (IdeConfiguration *self)
 guint
 ide_configuration_get_sequence (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), 0);
 
-  return self->sequence;
+  return priv->sequence;
 }
 
 /**
@@ -1092,10 +1155,12 @@ ide_configuration_get_sequence (IdeConfiguration *self)
 IdeBuildCommandQueue *
 ide_configuration_get_prebuild (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  if (self->prebuild != NULL)
-    return g_object_ref (self->prebuild);
+  if (priv->prebuild != NULL)
+    return g_object_ref (priv->prebuild);
 
   return ide_build_command_queue_new ();
 }
@@ -1118,10 +1183,12 @@ ide_configuration_get_prebuild (IdeConfiguration *self)
 IdeBuildCommandQueue *
 ide_configuration_get_postbuild (IdeConfiguration *self)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
 
-  if (self->postbuild != NULL)
-    return g_object_ref (self->postbuild);
+  if (priv->postbuild != NULL)
+    return g_object_ref (priv->postbuild);
 
   return ide_build_command_queue_new ();
 }
@@ -1130,20 +1197,24 @@ void
 _ide_configuration_set_prebuild (IdeConfiguration     *self,
                                  IdeBuildCommandQueue *prebuild)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (!prebuild || IDE_IS_BUILD_COMMAND_QUEUE (prebuild));
 
-  g_set_object (&self->prebuild, prebuild);
+  g_set_object (&priv->prebuild, prebuild);
 }
 
 void
 _ide_configuration_set_postbuild (IdeConfiguration     *self,
                                   IdeBuildCommandQueue *postbuild)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
+
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (!postbuild || IDE_IS_BUILD_COMMAND_QUEUE (postbuild));
 
-  g_set_object (&self->postbuild, postbuild);
+  g_set_object (&priv->postbuild, postbuild);
 }
 
 static GValue *
@@ -1151,18 +1222,19 @@ ide_configuration_reset_internal_value (IdeConfiguration *self,
                                         const gchar      *key,
                                         GType             type)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   GValue *v;
 
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (key != NULL);
   g_assert (type != G_TYPE_INVALID);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v == NULL)
     {
       v = _value_new (type);
-      g_hash_table_insert (self->internal, g_strdup (key), v);
+      g_hash_table_insert (priv->internal, g_strdup (key), v);
     }
   else
     {
@@ -1177,12 +1249,13 @@ const gchar *
 ide_configuration_get_internal_string (IdeConfiguration *self,
                                        const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   const GValue *v;
 
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
   g_return_val_if_fail (key != NULL, NULL);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v != NULL && G_VALUE_HOLDS_STRING (v))
     return g_value_get_string (v);
@@ -1208,12 +1281,13 @@ gboolean
 ide_configuration_get_internal_boolean (IdeConfiguration *self,
                                         const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   const GValue *v;
 
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), FALSE);
   g_return_val_if_fail (key != NULL, FALSE);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v != NULL && G_VALUE_HOLDS_BOOLEAN (v))
     return g_value_get_boolean (v);
@@ -1239,12 +1313,13 @@ gint
 ide_configuration_get_internal_int (IdeConfiguration *self,
                                     const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   const GValue *v;
 
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), -1);
   g_return_val_if_fail (key != NULL, -1);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v != NULL && G_VALUE_HOLDS_INT (v))
     return g_value_get_int (v);
@@ -1270,12 +1345,13 @@ gint64
 ide_configuration_get_internal_int64 (IdeConfiguration *self,
                                       const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   const GValue *v;
 
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), -1);
   g_return_val_if_fail (key != NULL, -1);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v != NULL && G_VALUE_HOLDS_INT64 (v))
     return g_value_get_int64 (v);
@@ -1310,12 +1386,13 @@ gpointer
 ide_configuration_get_internal_object (IdeConfiguration *self,
                                        const gchar      *key)
 {
+  IdeConfigurationPrivate *priv = ide_configuration_get_instance_private (self);
   const GValue *v;
 
   g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
   g_return_val_if_fail (key != NULL, NULL);
 
-  v = g_hash_table_lookup (self->internal, key);
+  v = g_hash_table_lookup (priv->internal, key);
 
   if (v != NULL && G_VALUE_HOLDS_OBJECT (v))
     return g_value_get_object (v);
