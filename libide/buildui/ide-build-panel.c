@@ -1,4 +1,4 @@
-/* gbp-build-panel.c
+/* ide-build-panel.c
  *
  * Copyright (C) 2015 Christian Hergert <chergert@redhat.com>
  *
@@ -16,15 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define G_LOG_DOMAIN "ide-build-panel"
+
 #include <glib/gi18n.h>
 #include <ide.h>
 
 #include "egg-binding-group.h"
 #include "egg-signal-group.h"
 
-#include "gbp-build-panel.h"
+#include "ide-build-panel.h"
 
-struct _GbpBuildPanel
+struct _IdeBuildPanel
 {
   PnlDockWidget        parent_instance;
 
@@ -48,7 +50,7 @@ struct _GbpBuildPanel
   guint                warning_count;
 };
 
-G_DEFINE_TYPE (GbpBuildPanel, gbp_build_panel, PNL_TYPE_DOCK_WIDGET)
+G_DEFINE_TYPE (IdeBuildPanel, ide_build_panel, PNL_TYPE_DOCK_WIDGET)
 
 enum {
   PROP_0,
@@ -65,7 +67,7 @@ enum {
 static GParamSpec *properties [LAST_PROP];
 
 static void
-gbp_build_panel_diagnostic (GbpBuildPanel  *self,
+ide_build_panel_diagnostic (IdeBuildPanel  *self,
                             IdeDiagnostic  *diagnostic,
                             IdeBuildResult *result)
 {
@@ -74,7 +76,7 @@ gbp_build_panel_diagnostic (GbpBuildPanel  *self,
 
   IDE_ENTRY;
 
-  g_assert (GBP_IS_BUILD_PANEL (self));
+  g_assert (IDE_IS_BUILD_PANEL (self));
   g_assert (diagnostic != NULL);
   g_assert (IDE_IS_BUILD_RESULT (result));
 
@@ -149,9 +151,9 @@ gbp_build_panel_diagnostic (GbpBuildPanel  *self,
 }
 
 static void
-gbp_build_panel_update_running_time (GbpBuildPanel *self)
+ide_build_panel_update_running_time (IdeBuildPanel *self)
 {
-  g_assert (GBP_IS_BUILD_PANEL (self));
+  g_assert (IDE_IS_BUILD_PANEL (self));
 
   if (self->result != NULL)
     {
@@ -178,10 +180,10 @@ gbp_build_panel_update_running_time (GbpBuildPanel *self)
 }
 
 static void
-gbp_build_panel_connect (GbpBuildPanel  *self,
+ide_build_panel_connect (IdeBuildPanel  *self,
                          IdeBuildResult *result)
 {
-  g_return_if_fail (GBP_IS_BUILD_PANEL (self));
+  g_return_if_fail (IDE_IS_BUILD_PANEL (self));
   g_return_if_fail (IDE_IS_BUILD_RESULT (result));
   g_return_if_fail (self->result == NULL);
 
@@ -201,9 +203,9 @@ gbp_build_panel_connect (GbpBuildPanel  *self,
 }
 
 static void
-gbp_build_panel_disconnect (GbpBuildPanel *self)
+ide_build_panel_disconnect (IdeBuildPanel *self)
 {
-  g_return_if_fail (GBP_IS_BUILD_PANEL (self));
+  g_return_if_fail (IDE_IS_BUILD_PANEL (self));
 
   gtk_revealer_set_reveal_child (self->status_revealer, FALSE);
 
@@ -216,46 +218,46 @@ gbp_build_panel_disconnect (GbpBuildPanel *self)
 }
 
 void
-gbp_build_panel_set_result (GbpBuildPanel  *self,
+ide_build_panel_set_result (IdeBuildPanel  *self,
                             IdeBuildResult *result)
 {
-  g_return_if_fail (GBP_IS_BUILD_PANEL (self));
+  g_return_if_fail (IDE_IS_BUILD_PANEL (self));
   g_return_if_fail (!result || IDE_IS_BUILD_RESULT (result));
 
   if (result != self->result)
     {
       if (self->result)
-        gbp_build_panel_disconnect (self);
+        ide_build_panel_disconnect (self);
 
       if (result)
-        gbp_build_panel_connect (self, result);
+        ide_build_panel_connect (self, result);
     }
 }
 
 static void
-gbp_build_panel_notify_running (GbpBuildPanel  *self,
+ide_build_panel_notify_running (IdeBuildPanel  *self,
                                 GParamSpec     *pspec,
                                 IdeBuildResult *result)
 {
-  g_assert (GBP_IS_BUILD_PANEL (self));
+  g_assert (IDE_IS_BUILD_PANEL (self));
   g_assert (IDE_IS_BUILD_RESULT (result));
 
-  gbp_build_panel_update_running_time (self);
+  ide_build_panel_update_running_time (self);
 }
 
 static void
-gbp_build_panel_notify_running_time (GbpBuildPanel  *self,
+ide_build_panel_notify_running_time (IdeBuildPanel  *self,
                                      GParamSpec     *pspec,
                                      IdeBuildResult *result)
 {
-  g_assert (GBP_IS_BUILD_PANEL (self));
+  g_assert (IDE_IS_BUILD_PANEL (self));
   g_assert (IDE_IS_BUILD_RESULT (result));
 
-  gbp_build_panel_update_running_time (self);
+  ide_build_panel_update_running_time (self);
 }
 
 static void
-gbp_build_panel_diagnostic_activated (GbpBuildPanel     *self,
+ide_build_panel_diagnostic_activated (IdeBuildPanel     *self,
                                       GtkTreePath       *path,
                                       GtkTreeViewColumn *colun,
                                       GtkTreeView       *tree_view)
@@ -269,7 +271,7 @@ gbp_build_panel_diagnostic_activated (GbpBuildPanel     *self,
 
   IDE_ENTRY;
 
-  g_assert (GBP_IS_BUILD_PANEL (self));
+  g_assert (IDE_IS_BUILD_PANEL (self));
   g_assert (path != NULL);
   g_assert (GTK_IS_TREE_VIEW_COLUMN (colun));
   g_assert (GTK_IS_TREE_VIEW (tree_view));
@@ -307,7 +309,7 @@ gbp_build_panel_diagnostic_activated (GbpBuildPanel     *self,
 }
 
 static void
-gbp_build_panel_text_func (GtkCellLayout   *layout,
+ide_build_panel_text_func (GtkCellLayout   *layout,
                            GtkCellRenderer *renderer,
                            GtkTreeModel    *model,
                            GtkTreeIter     *iter,
@@ -371,27 +373,27 @@ gbp_build_panel_text_func (GtkCellLayout   *layout,
 }
 
 static void
-gbp_build_panel_destroy (GtkWidget *widget)
+ide_build_panel_destroy (GtkWidget *widget)
 {
-  GbpBuildPanel *self = (GbpBuildPanel *)widget;
+  IdeBuildPanel *self = (IdeBuildPanel *)widget;
 
   if (self->result)
-    gbp_build_panel_disconnect (self);
+    ide_build_panel_disconnect (self);
 
   g_clear_object (&self->bindings);
   g_clear_object (&self->signals);
   g_clear_pointer (&self->diags_hash, g_hash_table_unref);
 
-  GTK_WIDGET_CLASS (gbp_build_panel_parent_class)->destroy (widget);
+  GTK_WIDGET_CLASS (ide_build_panel_parent_class)->destroy (widget);
 }
 
 static void
-gbp_build_panel_get_property (GObject    *object,
+ide_build_panel_get_property (GObject    *object,
                               guint       prop_id,
                               GValue     *value,
                               GParamSpec *pspec)
 {
-  GbpBuildPanel *self = GBP_BUILD_PANEL(object);
+  IdeBuildPanel *self = IDE_BUILD_PANEL(object);
 
   switch (prop_id)
     {
@@ -405,17 +407,17 @@ gbp_build_panel_get_property (GObject    *object,
 }
 
 static void
-gbp_build_panel_set_property (GObject      *object,
+ide_build_panel_set_property (GObject      *object,
                               guint         prop_id,
                               const GValue *value,
                               GParamSpec   *pspec)
 {
-  GbpBuildPanel *self = GBP_BUILD_PANEL(object);
+  IdeBuildPanel *self = IDE_BUILD_PANEL(object);
 
   switch (prop_id)
     {
     case PROP_RESULT:
-      gbp_build_panel_set_result (self, g_value_get_object (value));
+      ide_build_panel_set_result (self, g_value_get_object (value));
       break;
 
     default:
@@ -424,15 +426,15 @@ gbp_build_panel_set_property (GObject      *object,
 }
 
 static void
-gbp_build_panel_class_init (GbpBuildPanelClass *klass)
+ide_build_panel_class_init (IdeBuildPanelClass *klass)
 {
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
-  object_class->get_property = gbp_build_panel_get_property;
-  object_class->set_property = gbp_build_panel_set_property;
+  object_class->get_property = ide_build_panel_get_property;
+  object_class->set_property = ide_build_panel_set_property;
 
-  widget_class->destroy = gbp_build_panel_destroy;
+  widget_class->destroy = ide_build_panel_destroy;
 
   properties [PROP_RESULT] =
     g_param_spec_object ("result",
@@ -443,24 +445,24 @@ gbp_build_panel_class_init (GbpBuildPanelClass *klass)
 
   g_object_class_install_properties (object_class, LAST_PROP, properties);
 
-  gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/builder/plugins/build-tools-plugin/gbp-build-panel.ui");
+  gtk_widget_class_set_template_from_resource (widget_class, "/org/gnome/builder/plugins/buildui/ide-build-panel.ui");
   gtk_widget_class_set_css_name (widget_class, "buildpanel");
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, diagnostics_column);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, diagnostics_store);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, diagnostics_text);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, diagnostics_tree_view);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, errors_label);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, running_time_label);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, stack);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, status_label);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, status_revealer);
-  gtk_widget_class_bind_template_child (widget_class, GbpBuildPanel, warnings_label);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, diagnostics_column);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, diagnostics_store);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, diagnostics_text);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, diagnostics_tree_view);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, errors_label);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, running_time_label);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, stack);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, status_label);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, status_revealer);
+  gtk_widget_class_bind_template_child (widget_class, IdeBuildPanel, warnings_label);
 
   g_type_ensure (IDE_TYPE_DIAGNOSTIC);
 }
 
 static void
-gbp_build_panel_init (GbpBuildPanel *self)
+ide_build_panel_init (IdeBuildPanel *self)
 {
   gtk_widget_init_template (GTK_WIDGET (self));
 
@@ -472,31 +474,31 @@ gbp_build_panel_init (GbpBuildPanel *self)
 
   egg_signal_group_connect_object (self->signals,
                                    "diagnostic",
-                                   G_CALLBACK (gbp_build_panel_diagnostic),
+                                   G_CALLBACK (ide_build_panel_diagnostic),
                                    self,
                                    G_CONNECT_SWAPPED);
 
   egg_signal_group_connect_object (self->signals,
                                    "notify::running",
-                                   G_CALLBACK (gbp_build_panel_notify_running),
+                                   G_CALLBACK (ide_build_panel_notify_running),
                                    self,
                                    G_CONNECT_SWAPPED);
 
   egg_signal_group_connect_object (self->signals,
                                    "notify::running-time",
-                                   G_CALLBACK (gbp_build_panel_notify_running_time),
+                                   G_CALLBACK (ide_build_panel_notify_running_time),
                                    self,
                                    G_CONNECT_SWAPPED);
 
   g_signal_connect_object (self->diagnostics_tree_view,
                            "row-activated",
-                           G_CALLBACK (gbp_build_panel_diagnostic_activated),
+                           G_CALLBACK (ide_build_panel_diagnostic_activated),
                            self,
                            G_CONNECT_SWAPPED);
 
   gtk_cell_layout_set_cell_data_func (GTK_CELL_LAYOUT (self->diagnostics_column),
                                       GTK_CELL_RENDERER (self->diagnostics_text),
-                                      gbp_build_panel_text_func,
+                                      ide_build_panel_text_func,
                                       self, NULL);
 
 

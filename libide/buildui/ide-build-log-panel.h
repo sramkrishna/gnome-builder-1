@@ -1,4 +1,4 @@
-/* gbp-build-panel.h
+/* ide-build-log-panel.h
  *
  * Copyright (C) 2015 Christian Hergert <chergert@redhat.com>
  *
@@ -16,21 +16,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GBP_BUILD_PANEL_H
-#define GBP_BUILD_PANEL_H
+#ifndef IDE_BUILD_LOG_PANEL_H
+#define IDE_BUILD_LOG_PANEL_H
 
 #include <gtk/gtk.h>
 #include <ide.h>
 
 G_BEGIN_DECLS
 
-#define GBP_TYPE_BUILD_PANEL (gbp_build_panel_get_type())
+#define IDE_TYPE_BUILD_LOG_PANEL (ide_build_log_panel_get_type())
 
-G_DECLARE_FINAL_TYPE (GbpBuildPanel, gbp_build_panel, GBP, BUILD_PANEL, PnlDockWidget)
+G_DECLARE_FINAL_TYPE (IdeBuildLogPanel, ide_build_log_panel, IDE, BUILD_LOG_PANEL, PnlDockWidget)
 
-void gbp_build_panel_set_result (GbpBuildPanel  *self,
-                                 IdeBuildResult *result);
+void ide_build_log_panel_set_result (IdeBuildLogPanel *self,
+                                     IdeBuildResult   *result);
 
 G_END_DECLS
 
-#endif /* GBP_BUILD_PANEL_H */
+#endif /* IDE_BUILD_LOG_PANEL_H */

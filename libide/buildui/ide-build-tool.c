@@ -1,4 +1,4 @@
-/* gbp-build-tool.c
+/* ide-build-tool.c
  *
  * Copyright (C) 2015 Christian Hergert <christian@hergert.me>
  *
@@ -16,15 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#define G_LOG_DOMAIN "ide-build-tool"
+
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
 
 #include <glib/gi18n.h>
 
-#include "gbp-build-tool.h"
+#include "ide-build-tool.h"
 
-struct _GbpBuildTool
+struct _IdeBuildTool
 {
   GObject parent_instance;
   gint64  build_start;
@@ -38,22 +40,22 @@ static gchar                *runtime_id;
 
 static void application_tool_init (IdeApplicationToolInterface *iface);
 
-G_DEFINE_TYPE_EXTENDED (GbpBuildTool, gbp_build_tool, G_TYPE_OBJECT, 0,
+G_DEFINE_TYPE_EXTENDED (IdeBuildTool, ide_build_tool, G_TYPE_OBJECT, 0,
                         G_IMPLEMENT_INTERFACE (IDE_TYPE_APPLICATION_TOOL,
                                                application_tool_init))
 
 static void
-gbp_build_tool_class_init (GbpBuildToolClass *klass)
+ide_build_tool_class_init (IdeBuildToolClass *klass)
 {
 }
 
 static void
-gbp_build_tool_init (GbpBuildTool *self)
+ide_build_tool_init (IdeBuildTool *self)
 {
 }
 
 static void
-gbp_build_tool_log (GbpBuildTool      *self,
+ide_build_tool_log (IdeBuildTool      *self,
                     IdeBuildResultLog  log,
                     const gchar       *message,
                     IdeBuildResult    *build_result)
@@ -116,13 +118,13 @@ print_build_info (IdeContext *context,
 }
 
 static void
-gbp_build_tool_build_cb (GObject      *object,
+ide_build_tool_build_cb (GObject      *object,
                          GAsyncResult *result,
                          gpointer      user_data)
 {
   g_autoptr(GTask) task = user_data;
   g_autoptr(IdeBuildResult) build_result = NULL;
-  GbpBuildTool *self;
+  IdeBuildTool *self;
   IdeBuilder *builder = (IdeBuilder *)object;
   GError *error = NULL;
   guint64 completed_at;
@@ -164,7 +166,7 @@ gbp_build_tool_build_cb (GObject      *object,
 }
 
 static void
-gbp_build_tool_new_context_cb (GObject      *object,
+ide_build_tool_new_context_cb (GObject      *object,
                                GAsyncResult *result,
                                gpointer      user_data)
 {
@@ -175,7 +177,7 @@ gbp_build_tool_new_context_cb (GObject      *object,
   g_autoptr(IdeConfiguration) configuration = NULL;
   IdeConfigurationManager *configuration_manager;
   IdeBuildSystem *build_system;
-  GbpBuildTool *self;
+  IdeBuildTool *self;
   GError *error = NULL;
 
   g_assert (G_IS_TASK (task));
@@ -248,7 +250,7 @@ gbp_build_tool_new_context_cb (GObject      *object,
                            flags,
                            &build_result,
                            g_task_get_cancellable (task),
-                           gbp_build_tool_build_cb,
+                           ide_build_tool_build_cb,
                            g_object_ref (task));
 
   if (build_result != NULL)
@@ -260,20 +262,20 @@ gbp_build_tool_new_context_cb (GObject      *object,
        */
       g_signal_connect_object (build_result,
                                "log",
-                               G_CALLBACK (gbp_build_tool_log),
+                               G_CALLBACK (ide_build_tool_log),
                                g_task_get_source_object (task),
                                G_CONNECT_SWAPPED);
     }
 }
 
 static void
-gbp_build_tool_run_async (IdeApplicationTool  *tool,
+ide_build_tool_run_async (IdeApplicationTool  *tool,
                           const gchar * const *arguments,
                           GCancellable        *cancellable,
                           GAsyncReadyCallback  callback,
                           gpointer             user_data)
 {
-  GbpBuildTool *self = (GbpBuildTool *)tool;
+  IdeBuildTool *self = (IdeBuildTool *)tool;
   g_autoptr(GTask) task = NULL;
   g_autofree gchar *project_path = NULL;
   g_autoptr(GFile) project_file = NULL;
@@ -302,7 +304,7 @@ gbp_build_tool_run_async (IdeApplicationTool  *tool,
     { NULL }
   };
 
-  g_assert (GBP_IS_BUILD_TOOL (self));
+  g_assert (IDE_IS_BUILD_TOOL (self));
   g_assert (arguments != NULL);
   g_assert (!cancellable || G_IS_CANCELLABLE (cancellable));
 
@@ -334,16 +336,16 @@ gbp_build_tool_run_async (IdeApplicationTool  *tool,
 
   ide_context_new_async (project_file,
                          cancellable,
-                         gbp_build_tool_new_context_cb,
+                         ide_build_tool_new_context_cb,
                          g_object_ref (task));
 }
 
 static gboolean
-gbp_build_tool_run_finish (IdeApplicationTool  *tool,
+ide_build_tool_run_finish (IdeApplicationTool  *tool,
                            GAsyncResult        *result,
                            GError             **error)
 {
-  g_assert (GBP_IS_BUILD_TOOL (tool));
+  g_assert (IDE_IS_BUILD_TOOL (tool));
   g_assert (G_IS_TASK (result));
 
   return g_task_propagate_boolean (G_TASK (result), error);
@@ -352,6 +354,6 @@ gbp_build_tool_run_finish (IdeApplicationTool  *tool,
 static void
 application_tool_init (IdeApplicationToolInterface *iface)
 {
-  iface->run_async = gbp_build_tool_run_async;
-  iface->run_finish = gbp_build_tool_run_finish;
+  iface->run_async = ide_build_tool_run_async;
+  iface->run_finish = ide_build_tool_run_finish;
 }
