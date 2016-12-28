@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 #include "buffers/ide-buffer.h"
 #include "buffers/ide-unsaved-file.h"
 #include "buffers/ide-unsaved-files.h"
+#include "buildsystem/ide-buildconfig-configuration-provider.h"
 #include "buildsystem/ide-build-command.h"
 #include "buildsystem/ide-build-command-queue.h"
 #include "buildsystem/ide-build-manager.h"
