@@ -27,6 +27,14 @@ G_BEGIN_DECLS
 
 G_DECLARE_FINAL_TYPE (GbpFlatpakConfigurationProvider, gbp_flatpak_configuration_provider, GBP, FLATPAK_CONFIGURATION_PROVIDER, GObject)
 
+void gbp_flatpak_configuration_provider_save_async      (GbpFlatpakConfigurationProvider *self,
+                                                         GCancellable                    *cancellable,
+                                                         GAsyncReadyCallback              callback,
+                                                         gpointer                         user_data);
+gboolean gbp_flatpak_configuration_provider_save_finish (GbpFlatpakConfigurationProvider  *self,
+                                                         GAsyncResult                     *result,
+                                                         GError                          **error);
+
 G_END_DECLS
 
 #endif /* GBP_FLATPAK_CONFIGURATION_PROVIDER_H */
