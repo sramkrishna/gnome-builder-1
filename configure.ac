@@ -285,7 +285,6 @@ m4_include([plugins/clang/configure.ac])
 m4_include([plugins/color-picker/configure.ac])
 m4_include([plugins/command-bar/configure.ac])
 m4_include([plugins/comment-code/configure.ac])
-m4_include([plugins/contributing/configure.ac])
 m4_include([plugins/create-project/configure.ac])
 m4_include([plugins/ctags/configure.ac])
 m4_include([plugins/devhelp/configure.ac])
@@ -601,7 +600,6 @@ echo "  Clang ................................ : ${enable_clang_plugin}"
 echo "  Color picker.......................... : ${enable_color_picker_plugin}"
 echo "  Command Bar .......................... : ${enable_command_bar_plugin}"
 echo "  Comment Code.......................... : ${enable_comment_code_plugin}"
-echo "  Contribute ........................... : ${enable_contributing_plugin}"
 echo "  Ctags ................................ : ${enable_ctags_plugin}"
 echo "  Devhelp .............................. : ${enable_devhelp_plugin}"
 echo "  Editorconfig ......................... : ${enable_editorconfig}"

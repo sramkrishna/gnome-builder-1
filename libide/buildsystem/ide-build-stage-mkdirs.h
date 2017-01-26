@@ -1,4 +1,4 @@
-/* ide-simple-builder.h
+/* ide-build-stage-mkdirs.h
  *
  * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
@@ -16,32 +16,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef IDE_SIMPLE_BUILDER_H
-#define IDE_SIMPLE_BUILDER_H
+#ifndef IDE_BUILD_STAGE_MKDIRS_H
+#define IDE_BUILD_STAGE_MKDIRS_H
 
-#include "buildsystem/ide-builder.h"
-#include "buildsystem/ide-configuration.h"
+#include "ide-build-stage.h"
 
 G_BEGIN_DECLS
 
-#define IDE_TYPE_SIMPLE_BUILDER (ide_simple_builder_get_type())
+#define IDE_TYPE_BUILD_STAGE_MKDIRS (ide_build_stage_mkdirs_get_type())
 
-G_DECLARE_DERIVABLE_TYPE (IdeSimpleBuilder, ide_simple_builder, IDE, SIMPLE_BUILDER, IdeBuilder)
+G_DECLARE_DERIVABLE_TYPE (IdeBuildStageMkdirs, ide_build_stage_mkdirs, IDE, BUILD_STAGE_MKDIRS, IdeBuildStage)
 
-struct _IdeSimpleBuilderClass
+struct _IdeBuildStageMkdirsClass
 {
-  IdeBuilderClass parent_class;
+  IdeBuildStageClass parent_class;
 
   gpointer _reserved1;
   gpointer _reserved2;
   gpointer _reserved3;
   gpointer _reserved4;
-  gpointer _reserved5;
-  gpointer _reserved6;
-  gpointer _reserved7;
-  gpointer _reserved8;
 };
+
+IdeBuildStage *ide_build_stage_mkdirs_new      (IdeContext          *context);
+void           ide_build_stage_mkdirs_add_path (IdeBuildStageMkdirs *self,
+                                                const gchar         *path,
+                                                gboolean             with_parents,
+                                                gint                 mode);
 
 G_END_DECLS
 
-#endif /* IDE_SIMPLE_BUILDER_H */
+#endif /* IDE_BUILD_STAGE_MKDIRS_H */

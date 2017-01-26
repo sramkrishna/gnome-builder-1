@@ -25,8 +25,6 @@
 #include "ide-internal.h"
 #include "ide-macros.h"
 
-#include "buildsystem/ide-build-command.h"
-#include "buildsystem/ide-build-command-queue.h"
 #include "buildsystem/ide-configuration-manager.h"
 #include "buildsystem/ide-configuration.h"
 #include "buildsystem/ide-environment.h"
@@ -61,7 +59,13 @@ enum {
   LAST_PROP
 };
 
+enum {
+  INVALIDATE,
+  N_SIGNALS
+};
+
 static GParamSpec *properties [LAST_PROP];
+static guint signals [N_SIGNALS];
 
 static void
 load_string (IdeConfiguration *configuration,
@@ -116,36 +120,6 @@ load_environ (IdeConfiguration *configuration,
     }
 }
 
-static void
-load_command_queue (IdeBuildCommandQueue *cmdq,
-                    GKeyFile             *key_file,
-                    const gchar          *group,
-                    const gchar          *name)
-
-{
-  g_auto(GStrv) commands = NULL;
-
-  g_assert (IDE_IS_BUILD_COMMAND_QUEUE (cmdq));
-  g_assert (key_file != NULL);
-  g_assert (group != NULL);
-  g_assert (name != NULL);
-
-  commands = g_key_file_get_string_list (key_file, group, name, NULL, NULL);
-
-  if (commands != NULL)
-    {
-      for (guint i = 0; commands [i]; i++)
-        {
-          g_autoptr(IdeBuildCommand) command = NULL;
-
-          command = g_object_new (IDE_TYPE_BUILD_COMMAND,
-                                  "command-text", commands [i],
-                                  NULL);
-          ide_build_command_queue_append (cmdq, command);
-        }
-    }
-}
-
 static gboolean
 ide_configuration_manager_load (IdeConfigurationManager  *self,
                                 GKeyFile                 *key_file,
@@ -173,24 +147,6 @@ ide_configuration_manager_load (IdeConfigurationManager  *self,
   load_string (configuration, key_file, group, "runtime", "runtime-id");
   load_string (configuration, key_file, group, "prefix", "prefix");
   load_string (configuration, key_file, group, "app-id", "app-id");
-
-  if (g_key_file_has_key (key_file, group, "prebuild", NULL))
-    {
-      g_autoptr(IdeBuildCommandQueue) cmdq = NULL;
-
-      cmdq = ide_build_command_queue_new ();
-      load_command_queue (cmdq, key_file, group, "prebuild");
-      _ide_configuration_set_prebuild (configuration, cmdq);
-    }
-
-  if (g_key_file_has_key (key_file, group, "postbuild", NULL))
-    {
-      g_autoptr(IdeBuildCommandQueue) cmdq = NULL;
-
-      cmdq = ide_build_command_queue_new ();
-      load_command_queue (cmdq, key_file, group, "postbuild");
-      _ide_configuration_set_postbuild (configuration, cmdq);
-    }
 
   env_group = g_strdup_printf ("%s.environment", group);
 
@@ -617,6 +573,18 @@ ide_configuration_manager_class_init (IdeConfigurationManagerClass *klass)
                          (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   g_object_class_install_properties (object_class, LAST_PROP, properties);
+
+  /**
+   * IdeConfigurationManager::invalidate:
+   *
+   * This signal is emitted any time a new configuration is selected or the
+   * currently selected configurations state changes.
+   */
+  signals [INVALIDATE] =
+    g_signal_new ("invalidate",
+                  G_TYPE_FROM_CLASS (klass),
+                  G_SIGNAL_RUN_LAST,
+                  0, NULL, NULL, NULL, G_TYPE_NONE, 0);
 }
 
 static void
@@ -759,6 +727,8 @@ ide_configuration_manager_set_current (IdeConfigurationManager *self,
 
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_CURRENT]);
       g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_CURRENT_DISPLAY_NAME]);
+
+      g_signal_emit (self, signals [INVALIDATE], 0);
     }
 }
 
@@ -796,6 +766,8 @@ ide_configuration_manager_changed (IdeConfigurationManager *self,
   self->change_count++;
 
   ide_configuration_manager_queue_writeback (self);
+
+  g_signal_emit (self, signals [INVALIDATE], 0);
 }
 
 void

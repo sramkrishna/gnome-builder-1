@@ -30,19 +30,20 @@ libide_1_0_la_public_headers =                            \
 	buffers/ide-buffer.h                              \
 	buffers/ide-unsaved-file.h                        \
 	buffers/ide-unsaved-files.h                       \
-	buildsystem/ide-build-command.h                   \
-	buildsystem/ide-build-command-queue.h             \
+	buildsystem/ide-build-log.h                       \
 	buildsystem/ide-build-manager.h                   \
-	buildsystem/ide-build-result-addin.h              \
-	buildsystem/ide-build-result.h                    \
+	buildsystem/ide-build-pipeline.h                  \
+	buildsystem/ide-build-pipeline-addin.h            \
+	buildsystem/ide-build-stage.h                     \
+	buildsystem/ide-build-stage-launcher.h            \
+	buildsystem/ide-build-stage-mkdirs.h              \
+	buildsystem/ide-build-stage-transfer.h            \
 	buildsystem/ide-build-system.h                    \
 	buildsystem/ide-build-target.h                    \
-	buildsystem/ide-builder.h                         \
 	buildsystem/ide-configuration-manager.h           \
 	buildsystem/ide-configuration.h                   \
 	buildsystem/ide-environment-variable.h            \
 	buildsystem/ide-environment.h                     \
-	buildsystem/ide-simple-builder.h                  \
 	devices/ide-device-manager.h                      \
 	devices/ide-device-provider.h                     \
 	devices/ide-device.h                              \
@@ -159,6 +160,7 @@ libide_1_0_la_public_headers =                            \
 	tree/ide-tree.h                                   \
 	util/ide-cairo.h                                  \
 	util/ide-dnd.h                                    \
+	util/ide-directory-reaper.h                       \
 	util/ide-file-manager.h                           \
 	util/ide-flatpak.h                                \
 	util/ide-glib.h                                   \
@@ -200,19 +202,19 @@ libide_1_0_la_public_sources =                            \
 	buffers/ide-buffer.c                              \
 	buffers/ide-unsaved-file.c                        \
 	buffers/ide-unsaved-files.c                       \
-	buildsystem/ide-build-command.c                   \
-	buildsystem/ide-build-command-queue.c             \
 	buildsystem/ide-build-manager.c                   \
-	buildsystem/ide-build-result-addin.c              \
-	buildsystem/ide-build-result.c                    \
+	buildsystem/ide-build-pipeline.c                  \
+	buildsystem/ide-build-pipeline-addin.c            \
+	buildsystem/ide-build-stage.c                     \
+	buildsystem/ide-build-stage-launcher.c            \
+	buildsystem/ide-build-stage-mkdirs.c              \
+	buildsystem/ide-build-stage-transfer.c            \
 	buildsystem/ide-build-system.c                    \
 	buildsystem/ide-build-target.c                    \
-	buildsystem/ide-builder.c                         \
 	buildsystem/ide-configuration-manager.c           \
 	buildsystem/ide-configuration.c                   \
 	buildsystem/ide-environment-variable.c            \
 	buildsystem/ide-environment.c                     \
-	buildsystem/ide-simple-builder.c                  \
 	devices/ide-device-manager.c                      \
 	devices/ide-device-provider.c                     \
 	devices/ide-device.c                              \
@@ -334,6 +336,7 @@ libide_1_0_la_public_sources =                            \
 	tree/ide-tree.c                                   \
 	util/ide-cairo.c                                  \
 	util/ide-dnd.c                                    \
+	util/ide-directory-reaper.c                       \
 	util/ide-file-manager.c                           \
 	util/ide-flatpak.c                                \
 	util/ide-glib.c                                   \
@@ -374,6 +377,9 @@ libide_1_0_la_SOURCES =                                   \
 	application/ide-application-private.h             \
 	application/ide-application-tests.c               \
 	application/ide-application-tests.h               \
+	buildsystem/ide-build-log.c                       \
+	buildsystem/ide-build-log-private.h               \
+	buildsystem/ide-build-stage-private.h             \
 	editor/ide-editor-frame-actions.c                 \
 	editor/ide-editor-frame-actions.h                 \
 	editor/ide-editor-frame-private.h                 \
@@ -622,7 +628,8 @@ endif
 
 glib_enum_headers =                        \
 	buffers/ide-buffer.h               \
-	buildsystem/ide-build-result.h     \
+	buildsystem/ide-build-log.h        \
+	buildsystem/ide-build-pipeline.h   \
 	devices/ide-device.h               \
 	diagnostics/ide-diagnostic.h       \
 	doap/ide-doap.h                    \

@@ -50,6 +50,7 @@ void                  ide_configuration_set_dirty            (IdeConfiguration  
 const gchar          *ide_configuration_get_display_name     (IdeConfiguration  *self);
 void                  ide_configuration_set_display_name     (IdeConfiguration  *self,
                                                               const gchar       *display_name);
+gboolean              ide_configuration_get_ready            (IdeConfiguration  *self);
 IdeRuntime           *ide_configuration_get_runtime          (IdeConfiguration  *self);
 void                  ide_configuration_set_runtime          (IdeConfiguration  *self,
                                                               IdeRuntime        *runtime);
@@ -75,16 +76,19 @@ IdeEnvironment       *ide_configuration_get_environment      (IdeConfiguration  
 IdeConfiguration     *ide_configuration_duplicate            (IdeConfiguration  *self);
 IdeConfiguration     *ide_configuration_snapshot             (IdeConfiguration  *self);
 guint                 ide_configuration_get_sequence         (IdeConfiguration  *self);
-IdeBuildCommandQueue *ide_configuration_get_prebuild         (IdeConfiguration  *self);
-IdeBuildCommandQueue *ide_configuration_get_postbuild        (IdeConfiguration  *self);
 const gchar          *ide_configuration_get_app_id           (IdeConfiguration  *self);
 void                  ide_configuration_set_app_id           (IdeConfiguration  *self,
-                                                              const gchar        *app_id);
+                                                              const gchar       *app_id);
 const gchar          *ide_configuration_get_internal_string  (IdeConfiguration  *self,
                                                               const gchar       *key);
 void                  ide_configuration_set_internal_string  (IdeConfiguration  *self,
                                                               const gchar       *key,
                                                               const gchar       *value);
+const gchar * const  *ide_configuration_get_internal_strv    (IdeConfiguration  *self,
+                                                              const gchar       *key);
+void                  ide_configuration_set_internal_strv    (IdeConfiguration  *self,
+                                                              const gchar       *key,
+                                                              const gchar * const *value);
 gboolean              ide_configuration_get_internal_boolean (IdeConfiguration  *self,
                                                               const gchar       *key);
 void                  ide_configuration_set_internal_boolean (IdeConfiguration  *self,

@@ -1,6 +1,6 @@
-/* gbp-gcc-build-result-addin.h
+/* ide-build-stage-transfer.h
  *
- * Copyright (C) 2015 Christian Hergert <christian@hergert.me>
+ * Copyright (C) 2016 Christian Hergert <chergert@redhat.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,17 +16,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GBP_GCC_BUILD_RESULT_ADDIN_H
-#define GBP_GCC_BUILD_RESULT_ADDIN_H
+#ifndef IDE_BUILD_STAGE_TRANSFER_H
+#define IDE_BUILD_STAGE_TRANSFER_H
 
-#include <ide.h>
+#include "buildsystem/ide-build-stage.h"
 
 G_BEGIN_DECLS
 
-#define GBP_TYPE_GCC_BUILD_RESULT_ADDIN (gbp_gcc_build_result_addin_get_type())
+#define IDE_TYPE_BUILD_STAGE_TRANSFER (ide_build_stage_transfer_get_type())
 
-G_DECLARE_FINAL_TYPE (GbpGccBuildResultAddin, gbp_gcc_build_result_addin, GBP, GCC_BUILD_RESULT_ADDIN, IdeObject)
+G_DECLARE_FINAL_TYPE (IdeBuildStageTransfer, ide_build_stage_transfer, IDE, BUILD_STAGE_TRANSFER, IdeBuildStage)
+
+IdeBuildStageTransfer *ide_build_stage_transfer_new (IdeContext  *context,
+                                                     IdeTransfer *transfer);
 
 G_END_DECLS
 
-#endif /* GBP_GCC_BUILD_RESULT_ADDIN_H */
+#endif /* IDE_BUILD_STAGE_TRANSFER_H */

@@ -24,7 +24,6 @@
 #include "ide-debug.h"
 #include "ide-internal.h"
 
-#include "buildsystem/ide-build-command-queue.h"
 #include "buildsystem/ide-configuration.h"
 #include "buildsystem/ide-configuration-manager.h"
 #include "buildsystem/ide-environment.h"
@@ -47,9 +46,6 @@ struct _IdeConfiguration
 
   IdeEnvironment *environment;
 
-  IdeBuildCommandQueue *prebuild;
-  IdeBuildCommandQueue *postbuild;
-
   GHashTable     *internal;
 
   gint            parallelism;
@@ -58,6 +54,14 @@ struct _IdeConfiguration
   guint           dirty : 1;
   guint           debug : 1;
   guint           is_snapshot : 1;
+
+  /*
+   * These are used to determine if we can make progress building
+   * with this configuration. When devices are added/removed, the
+   * IdeConfiguration:ready property will be notified.
+   */
+  guint           device_ready : 1;
+  guint           runtime_ready : 1;
 };
 
 G_DEFINE_TYPE (IdeConfiguration, ide_configuration, IDE_TYPE_OBJECT)
@@ -74,6 +78,7 @@ enum {
   PROP_ID,
   PROP_PARALLELISM,
   PROP_PREFIX,
+  PROP_READY,
   PROP_RUNTIME,
   PROP_RUNTIME_ID,
   PROP_APP_ID,
@@ -156,14 +161,22 @@ ide_configuration_device_manager_items_changed (IdeConfiguration *self,
                                                 IdeDeviceManager *device_manager)
 {
   IdeDevice *device;
+  gboolean device_ready;
 
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (IDE_IS_DEVICE_MANAGER (device_manager));
 
   device = ide_device_manager_get_device (device_manager, self->device_id);
+  device_ready = !!device;
 
-  if (device != NULL)
+  if (!self->device_ready && device_ready)
     ide_device_prepare_configuration (device, self);
+
+  if (device_ready != self->device_ready)
+    {
+      self->device_ready = device_ready;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_READY]);
+    }
 }
 
 static void
@@ -174,14 +187,22 @@ ide_configuration_runtime_manager_items_changed (IdeConfiguration  *self,
                                                  IdeRuntimeManager *runtime_manager)
 {
   IdeRuntime *runtime;
+  gboolean runtime_ready;
 
   g_assert (IDE_IS_CONFIGURATION (self));
   g_assert (IDE_IS_RUNTIME_MANAGER (runtime_manager));
 
   runtime = ide_runtime_manager_get_runtime (runtime_manager, self->runtime_id);
+  runtime_ready = !!runtime;
 
-  if (runtime != NULL)
+  if (!self->runtime_ready && runtime_ready)
     ide_runtime_prepare_configuration (runtime, self);
+
+  if (runtime_ready != self->runtime_ready)
+    {
+      self->runtime_ready = runtime_ready;
+      g_object_notify_by_pspec (G_OBJECT (self), properties [PROP_READY]);
+    }
 }
 
 static void
@@ -240,8 +261,6 @@ ide_configuration_finalize (GObject *object)
   IdeConfiguration *self = (IdeConfiguration *)object;
 
   g_clear_object (&self->environment);
-  g_clear_object (&self->prebuild);
-  g_clear_object (&self->postbuild);
 
   g_clear_pointer (&self->internal, g_hash_table_unref);
   g_clear_pointer (&self->config_opts, g_free);
@@ -295,6 +314,10 @@ ide_configuration_get_property (GObject    *object,
 
     case PROP_PARALLELISM:
       g_value_set_int (value, ide_configuration_get_parallelism (self));
+      break;
+
+    case PROP_READY:
+      g_value_set_boolean (value, ide_configuration_get_ready (self));
       break;
 
     case PROP_PREFIX:
@@ -462,6 +485,13 @@ ide_configuration_class_init (IdeConfigurationClass *klass)
                          "Prefix",
                          NULL,
                          (G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+
+  properties [PROP_READY] =
+    g_param_spec_boolean ("ready",
+                          "Ready",
+                          "If the configuration can be used for building",
+                          FALSE,
+                          (G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 
   properties [PROP_RUNTIME] =
     g_param_spec_object ("runtime",
@@ -997,12 +1027,6 @@ ide_configuration_snapshot (IdeConfiguration *self)
 
   copy->environment = ide_environment_copy (self->environment);
 
-  if (self->prebuild)
-    copy->prebuild = ide_build_command_queue_copy (self->prebuild);
-
-  if (self->postbuild)
-    copy->postbuild = ide_build_command_queue_copy (self->postbuild);
-
   g_hash_table_iter_init (&iter, self->internal);
   while (g_hash_table_iter_next (&iter, (gpointer *)&key, (gpointer *)&value))
     g_hash_table_insert (copy->internal, g_strdup (key), _value_copy (value));
@@ -1062,78 +1086,6 @@ ide_configuration_get_sequence (IdeConfiguration *self)
   return self->sequence;
 }
 
-/**
- * ide_configuration_get_prebuild:
- *
- * Gets a queue of commands to be run before the standard build process of
- * the configured build system. This can be useful for situations where the
- * user wants to setup some custom commands to prepare their environment.
- *
- * Constrast this with ide_configuration_get_postbuild() which gets commands
- * to be executed after the build system has completed.
- *
- * This function will always return a command queue. The command
- * queue may contain zero or more commands to be executed.
- *
- * Returns: (transfer full): An #IdeBuildCommandQueue.
- */
-IdeBuildCommandQueue *
-ide_configuration_get_prebuild (IdeConfiguration *self)
-{
-  g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
-
-  if (self->prebuild != NULL)
-    return g_object_ref (self->prebuild);
-
-  return ide_build_command_queue_new ();
-}
-
-/**
- * ide_configuration_get_postbuild:
- *
- * Gets a queue of commands to be run after the standard build process of
- * the configured build system. This can be useful for situations where the
- * user wants to modify something after the build completes.
- *
- * Constrast this with ide_configuration_get_prebuild() which gets commands
- * to be executed before the build system has started.
- *
- * This function will always return a command queue. The command
- * queue may contain zero or more commands to be executed.
- *
- * Returns: (transfer full): An #IdeBuildCommandQueue.
- */
-IdeBuildCommandQueue *
-ide_configuration_get_postbuild (IdeConfiguration *self)
-{
-  g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
-
-  if (self->postbuild != NULL)
-    return g_object_ref (self->postbuild);
-
-  return ide_build_command_queue_new ();
-}
-
-void
-_ide_configuration_set_prebuild (IdeConfiguration     *self,
-                                 IdeBuildCommandQueue *prebuild)
-{
-  g_assert (IDE_IS_CONFIGURATION (self));
-  g_assert (!prebuild || IDE_IS_BUILD_COMMAND_QUEUE (prebuild));
-
-  g_set_object (&self->prebuild, prebuild);
-}
-
-void
-_ide_configuration_set_postbuild (IdeConfiguration     *self,
-                                  IdeBuildCommandQueue *postbuild)
-{
-  g_assert (IDE_IS_CONFIGURATION (self));
-  g_assert (!postbuild || IDE_IS_BUILD_COMMAND_QUEUE (postbuild));
-
-  g_set_object (&self->postbuild, postbuild);
-}
-
 static GValue *
 ide_configuration_reset_internal_value (IdeConfiguration *self,
                                         const gchar      *key,
@@ -1190,6 +1142,37 @@ ide_configuration_set_internal_string (IdeConfiguration *self,
 
   v = ide_configuration_reset_internal_value (self, key, G_TYPE_STRING);
   g_value_set_string (v, value);
+}
+
+const gchar * const *
+ide_configuration_get_internal_strv (IdeConfiguration *self,
+                                     const gchar      *key)
+{
+  const GValue *v;
+
+  g_return_val_if_fail (IDE_IS_CONFIGURATION (self), NULL);
+  g_return_val_if_fail (key != NULL, NULL);
+
+  v = g_hash_table_lookup (self->internal, key);
+
+  if (v != NULL && G_VALUE_HOLDS (v, G_TYPE_STRV))
+    return g_value_get_boxed (v);
+
+  return NULL;
+}
+
+void
+ide_configuration_set_internal_strv (IdeConfiguration    *self,
+                                     const gchar         *key,
+                                     const gchar * const *value)
+{
+  GValue *v;
+
+  g_return_if_fail (IDE_IS_CONFIGURATION (self));
+  g_return_if_fail (key != NULL);
+
+  v = ide_configuration_reset_internal_value (self, key, G_TYPE_STRV);
+  g_value_set_boxed (v, value);
 }
 
 gboolean
@@ -1337,4 +1320,22 @@ ide_configuration_set_internal_object (IdeConfiguration *self,
 
   v = ide_configuration_reset_internal_value (self, key, type);
   g_value_set_object (v, instance);
+}
+
+/**
+ * ide_configuration_get_ready:
+ * @self: An #IdeConfiguration
+ *
+ * Determines if the configuration is ready for use. That means that the
+ * build device can be accessed and the runtime is loaded. This may change
+ * at runtime as devices and runtimes are added or removed.
+ *
+ * Returns: %TRUE if the configuration is ready for use.
+ */
+gboolean
+ide_configuration_get_ready (IdeConfiguration *self)
+{
+  g_return_val_if_fail (IDE_IS_CONFIGURATION (self), FALSE);
+
+  return self->device_ready && self->runtime_ready;
 }

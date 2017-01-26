@@ -26,7 +26,7 @@
 #include "ide-debug.h"
 
 #include "buildsystem/ide-build-manager.h"
-#include "buildsystem/ide-build-result.h"
+#include "buildsystem/ide-build-pipeline.h"
 #include "buildsystem/ide-configuration.h"
 #include "buildsystem/ide-configuration-manager.h"
 #include "projects/ide-project.h"
@@ -88,17 +88,18 @@ struct _IdeOmniBar
   EggBindingGroup *vcs_bindings;
 
   /*
-   * This is the IdeBuildResult for the last requested built.
-   */
-  IdeBuildResult *build_result;
-
-  /*
    * This tracks the number of times we have shown the current build
    * message while looping between the various messages. After our
    * SETTLE_MESSAGE_COUNT has been reached, we stop flapping between
    * messages.
    */
   guint seen_count;
+
+  /*
+   * Just tracks if we have already done a build so we can change
+   * how we display user messages.
+   */
+  guint did_build : 1;
 
   /*
    * The following are template children from the GtkBuilder template.
@@ -455,9 +456,16 @@ event_box_leave_notify (IdeOmniBar  *self,
 static void
 ide_omni_bar_next_message (IdeOmniBar *self)
 {
+  IdeBuildManager *build_manager;
   const gchar *name;
+  IdeContext *context;
 
   g_assert (IDE_IS_OMNI_BAR (self));
+
+  if (NULL == (context = ide_widget_get_context (GTK_WIDGET (self))))
+    return;
+
+  build_manager = ide_context_get_build_manager (context);
 
   name = gtk_stack_get_visible_child_name (self->message_stack);
 
@@ -473,10 +481,10 @@ ide_omni_bar_next_message (IdeOmniBar *self)
       /* Only rotate to build result if we have one and we haven't
        * flapped too many times.
        */
-      if (self->build_result != NULL && self->seen_count < 2)
+      if (self->did_build && self->seen_count < 2)
         gtk_stack_set_visible_child_name (self->message_stack, "build");
     }
-  else if (!ide_build_result_get_running (self->build_result))
+  else if (!ide_build_manager_get_busy (build_manager))
     {
       self->seen_count++;
       gtk_stack_set_visible_child_name (self->message_stack, "config");
@@ -551,20 +559,19 @@ ide_omni_bar_popover_closed (IdeOmniBar *self,
 }
 
 static void
-ide_omni_bar__build_manager__build_started (IdeOmniBar      *self,
-                                            IdeBuildResult  *build_result,
-                                            IdeBuildManager *build_manager)
+ide_omni_bar__build_manager__build_started (IdeOmniBar       *self,
+                                            IdeBuildPipeline *build_pipeline,
+                                            IdeBuildManager  *build_manager)
 {
   g_assert (IDE_IS_OMNI_BAR (self));
-  g_assert (IDE_IS_BUILD_RESULT (build_result));
+  g_assert (IDE_IS_BUILD_PIPELINE (build_pipeline));
   g_assert (IDE_IS_BUILD_MANAGER (build_manager));
+
+  self->did_build = TRUE;
+  self->seen_count = 0;
 
   gtk_widget_hide (GTK_WIDGET (self->popover_failed_label));
   gtk_widget_show (GTK_WIDGET (self->popover_build_cancel_button));
-
-  g_set_object (&self->build_result, build_result);
-
-  self->seen_count = 0;
 
   gtk_stack_set_visible_child_name (self->popover_time_stack, "current-build");
 
@@ -572,12 +579,12 @@ ide_omni_bar__build_manager__build_started (IdeOmniBar      *self,
 }
 
 static void
-ide_omni_bar__build_manager__build_failed (IdeOmniBar      *self,
-                                           IdeBuildResult  *build_result,
-                                           IdeBuildManager *build_manager)
+ide_omni_bar__build_manager__build_failed (IdeOmniBar       *self,
+                                           IdeBuildPipeline *build_pipeline,
+                                           IdeBuildManager  *build_manager)
 {
   g_assert (IDE_IS_OMNI_BAR (self));
-  g_assert (IDE_IS_BUILD_RESULT (build_result));
+  g_assert (IDE_IS_BUILD_PIPELINE (build_pipeline));
   g_assert (IDE_IS_BUILD_MANAGER (build_manager));
 
   gtk_widget_set_visible (GTK_WIDGET (self->popover_failed_label), TRUE);
@@ -588,12 +595,12 @@ ide_omni_bar__build_manager__build_failed (IdeOmniBar      *self,
 }
 
 static void
-ide_omni_bar__build_manager__build_finished (IdeOmniBar      *self,
-                                             IdeBuildResult  *build_result,
-                                             IdeBuildManager *build_manager)
+ide_omni_bar__build_manager__build_finished (IdeOmniBar       *self,
+                                             IdeBuildPipeline *build_pipeline,
+                                             IdeBuildManager  *build_manager)
 {
   g_assert (IDE_IS_OMNI_BAR (self));
-  g_assert (IDE_IS_BUILD_RESULT (build_result));
+  g_assert (IDE_IS_BUILD_PIPELINE (build_pipeline));
   g_assert (IDE_IS_BUILD_MANAGER (build_manager));
 
   gtk_widget_hide (GTK_WIDGET (self->popover_build_cancel_button));
@@ -606,7 +613,6 @@ ide_omni_bar_finalize (GObject *object)
 {
   IdeOmniBar *self = (IdeOmniBar *)object;
 
-  g_clear_object (&self->build_result);
   g_clear_object (&self->build_manager_bindings);
   g_clear_object (&self->build_manager_signals);
   g_clear_object (&self->config_manager_bindings);
