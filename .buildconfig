@@ -1,7 +1,7 @@
 [default]
 name=Builder (Development)
 device=local
-runtime=flatpak:org.gnome.Sdk/master/x86_64
+runtime=host
 config-opts=--enable-tracing --enable-debug --enable-hello-cpp-plugin
 prefix=/home/sri/.var/app/org.gnome.Builder/cache/gnome-builder/install/libide/host
 app-id=org.gnome.Builder
