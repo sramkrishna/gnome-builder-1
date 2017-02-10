@@ -48,6 +48,14 @@ ide_vcs_uri_set_dirty (IdeVcsUri *self)
   g_clear_pointer (&self->non_destructive_uri, g_free);
 }
 
+/*
+ * ide_vcs_uri_validate:
+ *
+ * Validates a filepath or network uri path.
+ *
+ * Returns: True on validation
+ */
+
 static gboolean
 ide_vcs_uri_validate (const IdeVcsUri *self)
 {
@@ -69,6 +77,14 @@ ide_vcs_uri_validate (const IdeVcsUri *self)
   return TRUE;
 }
 
+/*
+ * ide_vcs_uri_parse:
+ *
+ * Parses a given uri.  You should call  ide_vcs_uri_validate prior.
+ *
+ * Return: True if parsed correctly.
+ *
+ */
 static gboolean
 ide_vcs_uri_parse (IdeVcsUri   *self,
                    const gchar *str)
@@ -209,6 +225,13 @@ ide_vcs_uri_parse (IdeVcsUri   *self,
   return TRUE;
 }
 
+/*
+ * IdeVcsUri:
+ *
+ * Create a new uri (e.g. git://../ or https://../)
+ *
+ * Returns: (null)
+ */
 IdeVcsUri *
 ide_vcs_uri_new (const gchar *uri)
 {

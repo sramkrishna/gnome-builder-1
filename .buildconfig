@@ -1,8 +1,8 @@
 [default]
 name=Builder (Development)
 device=local
-runtime=org.gnome.Builder.json@c316fdc083822fd726db1bb38207d31ab63bd6aa
+runtime=host
 config-opts=--enable-tracing --enable-debug --enable-hello-cpp-plugin
-prefix=/app
+prefix=/home/sri/.var/app/org.gnome.Builder/cache/gnome-builder/install/libide/host
 app-id=org.gnome.Builder
 default=true
