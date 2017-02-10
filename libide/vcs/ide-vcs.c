@@ -30,6 +30,7 @@
  * @Title: IdeVcs
  *
  * IdeVcs is provides interfaces that interact with the underlying version control system.
+ *
  */
 
 G_DEFINE_INTERFACE (IdeVcs, ide_vcs, IDE_TYPE_OBJECT)
@@ -161,6 +162,8 @@ ide_vcs_get_working_directory (IdeVcs *self)
 
 /**
  * ide_vcs_get_buffer_change_monitor:
+ * @self: IdeVcs context
+ * @buffer: IdeBuffer
  *
  * Gets an #IdeBufferChangeMonitor for the buffer provided. If the #IdeVcs implementation does not
  * support change monitoring, or cannot for the current file, then %NULL is returned.
@@ -197,8 +200,14 @@ sort_by_priority (gconstpointer a,
 
 /**
  * ide_vcs_new_async:
+ * @context - IdeContext
+ * @cancellable - event cancellable or not
+ * @callback - callback function
+ * @user_data - pointer to callback function
  *
- * Create a new vcs context.
+ * Create a new vcs context asynchronously.  When complete will run the function
+ * from the callback parameter.
+ *
  *
  */
 void
@@ -221,6 +230,8 @@ ide_vcs_new_async (IdeContext           *context,
 
 /**
  * ide_vcs_new_finish:
+ * @result - result
+ * @error - errors
  *
  * Completes a call to ide_vcs_new_async().
  *
@@ -241,6 +252,7 @@ ide_vcs_new_finish (GAsyncResult  *result,
 
 /**
  * ide_vcs_emit_changed:
+ * @self: IdeVcs context
  *
  * Signals that a context has changed to the underlying VCS.
  *
@@ -256,6 +268,7 @@ ide_vcs_emit_changed (IdeVcs *self)
 
 /**
  * ide_vcs_get_config:
+ * @self: IdeVcs context
  *
  * Retrieves an #IdeVcsConfig for the #IdeVcs provided. If the #IdeVcs implementation does not
  * support access to configuration, then %NULL is returned.
@@ -279,6 +292,7 @@ ide_vcs_get_config (IdeVcs *self)
 
 /**
  * ide_vcs_get_branch_name:
+ * @self: IdeVcs context
  *
  * Retrieves the name of the branch in the current working directory.
  *

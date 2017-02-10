@@ -25,6 +25,13 @@ ide_vcs_config_default_init (IdeVcsConfigInterface *iface)
 {
 }
 
+/*
+ * ide_vcs_config_get_config:
+ *
+ * Retrieves the value of the underlying VCS configuration type.  (e.g. email address for git)
+ *
+ * Returns: null
+ */
 void
 ide_vcs_config_get_config (IdeVcsConfig    *self,
                            IdeVcsConfigType type,
@@ -35,6 +42,12 @@ ide_vcs_config_get_config (IdeVcsConfig    *self,
   IDE_VCS_CONFIG_GET_IFACE (self)->get_config (self, type, value);
 }
 
+/*
+ * ide_vcs_config_set_config:
+ *
+ * Sets the value of a VCS configuration type, (e.g. email address for git)
+ *
+ */
 void
 ide_vcs_config_set_config (IdeVcsConfig    *self,
                            IdeVcsConfigType type,
