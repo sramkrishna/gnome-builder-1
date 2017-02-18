@@ -20,12 +20,13 @@
 #define SYMBOL_TREE_H
 
 #include <glib-object.h>
+#include <ide.h>
 
 G_BEGIN_DECLS
 
 #define SYMBOL_TYPE_TREE (symbol_tree_get_type())
 
-G_DECLARE_FINAL_TYPE (SymbolTree, symbol_tree, SYMBOL, TREE, GObject)
+G_DECLARE_FINAL_TYPE (SymbolTree, symbol_tree, SYMBOL, TREE, IdeObject)
 
 G_END_DECLS
 

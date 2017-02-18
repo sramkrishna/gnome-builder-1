@@ -65,10 +65,12 @@ symbol_tree_builder_build_node (IdeTreeBuilder *builder,
       IdeTreeNode *child;
       IdeSymbolKind kind;
       gboolean has_children;
+      gboolean use_markup;
 
       symbol = ide_symbol_tree_get_nth_child (symbol_tree, parent, i);
       name = ide_symbol_node_get_name (symbol);
       kind = ide_symbol_node_get_kind (symbol);
+      use_markup = ide_symbol_node_get_use_markup (symbol);
 
       switch (kind)
         {
@@ -120,6 +122,82 @@ symbol_tree_builder_build_node (IdeTreeBuilder *builder,
         case IDE_SYMBOL_PACKAGE:
         case IDE_SYMBOL_PROPERTY:
         case IDE_SYMBOL_STRING:
+          icon_name = NULL;
+          break;
+
+        case IDE_SYMBOL_UI_ATTRIBUTES:
+          icon_name = "ui-attributes-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_CHILD:
+          icon_name = "ui-child-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_ITEM:
+          icon_name = "ui-item-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_MENU:
+          icon_name = "ui-menu-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_OBJECT:
+          icon_name = "ui-object-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_PACKING:
+          icon_name = "ui-packing-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_PROPERTY:
+          icon_name = "ui-property-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_SECTION:
+          icon_name = "ui-section-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_SIGNAL:
+          icon_name = "ui-signal-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_STYLE:
+          icon_name = "ui-style-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_SUBMENU:
+          icon_name = "ui-submenu-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_TEMPLATE:
+          icon_name = "ui-template-symbolic";
+          break;
+
+        case IDE_SYMBOL_XML_ATTRIBUTE:
+          icon_name = "xml-attribute-symbolic";
+          break;
+
+        case IDE_SYMBOL_XML_CDATA:
+          icon_name = "xml-cdata-symbolic";
+          break;
+
+        case IDE_SYMBOL_XML_COMMENT:
+          icon_name = "xml-comment-symbolic";
+          break;
+
+        case IDE_SYMBOL_XML_DECLARATION:
+          icon_name = "xml-declaration-symbolic";
+          break;
+
+        case IDE_SYMBOL_XML_ELEMENT:
+          icon_name = "xml-element-symbolic";
+          break;
+
+        case IDE_SYMBOL_UI_MENU_ATTRIBUTE:
+        case IDE_SYMBOL_UI_STYLE_CLASS:
+          icon_name = NULL;
+          break;
+
         default:
           icon_name = NULL;
           break;
@@ -130,6 +208,7 @@ symbol_tree_builder_build_node (IdeTreeBuilder *builder,
       child = g_object_new (IDE_TYPE_TREE_NODE,
                             "children-possible", has_children,
                             "text", name,
+                            "use-markup", use_markup,
                             "icon-name", icon_name,
                             "item", symbol,
                             NULL);

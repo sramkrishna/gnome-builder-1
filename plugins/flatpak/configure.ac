@@ -1,5 +1,6 @@
-m4_define([flatpak_required_version], [0.6.9])
-m4_define([ggit_required_version], [0.24.0])
+m4_define([flatpak_required_version], [0.8.0])
+m4_define([soup_required_version], [2.52.0])
+m4_define([ggit_required_version], [0.25.0])
 
 # --enable-flatpak-plugin=yes/no/auto
 AC_ARG_ENABLE([flatpak-plugin],
@@ -15,7 +16,7 @@ AS_IF([test "$enable_flatpak_plugin" != no],[
 	                  [have_flatpak=yes],
 	                  [have_flatpak=no])
 
-	PKG_CHECK_MODULES(SOUP, [libsoup-2.4])
+	PKG_CHECK_MODULES(SOUP, [libsoup-2.4 >= soup_required_version])
 
 
        AS_IF([test "$enable_flatpak_plugin" = "yes" && test "$have_flatpak" = "no"],[
