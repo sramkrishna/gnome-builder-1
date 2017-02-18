@@ -208,6 +208,7 @@ sort_by_priority (gconstpointer a,
  * Create a new vcs context asynchronously.  When complete will run the function
  * from the callback parameter.
  *
+ *
  */
 void
 ide_vcs_new_async (IdeContext           *context,
