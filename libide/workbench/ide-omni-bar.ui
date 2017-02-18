@@ -60,7 +60,8 @@
                 </child>
                 <child>
                   <object class="GtkStack" id="message_stack">
-                    <property name="homogeneous">false</property>
+                    <property name="vhomogeneous">false</property>
+                    <property name="hhomogeneous">true</property>
                     <property name="transition-type">slide-left</property>
                     <property name="transition-duration">500</property>
                     <property name="visible">true</property>
@@ -75,6 +76,7 @@
                     </child>
                     <child>
                       <object class="GtkLabel" id="build_result_mode_label">
+                        <property name="halign">end</property>
                         <property name="visible">true</property>
                         <property name="ellipsize">end</property>
                       </object>
@@ -144,7 +146,7 @@
   <object class="GtkPopover" id="popover">
     <property name="relative-to">event_box</property>
     <property name="position">bottom</property>
-    <property name="width-request">475</property>
+    <property name="width-request">525</property>
     <style>
       <class name="messagepopover"/>
     </style>

@@ -96,6 +96,8 @@ ide_subprocess_launcher_kill_process_group (GCancellable *cancellable,
   const gchar *ident;
   pid_t pid;
 
+  IDE_ENTRY;
+
   g_assert (G_IS_CANCELLABLE (cancellable));
   g_assert (G_IS_SUBPROCESS (subprocess));
 
@@ -114,6 +116,8 @@ ide_subprocess_launcher_kill_process_group (GCancellable *cancellable,
   g_signal_handlers_disconnect_by_func (cancellable,
                                         G_CALLBACK (ide_subprocess_launcher_kill_process_group),
                                         subprocess);
+
+  IDE_EXIT;
 #else
 # error "Your platform is not yet supported"
 #endif
@@ -123,6 +127,8 @@ static void
 ide_subprocess_launcher_kill_host_process (GCancellable  *cancellable,
                                            IdeSubprocess *subprocess)
 {
+  IDE_ENTRY;
+
   g_assert (G_IS_CANCELLABLE (cancellable));
   g_assert (IDE_IS_BREAKOUT_SUBPROCESS (subprocess));
 
@@ -131,6 +137,8 @@ ide_subprocess_launcher_kill_host_process (GCancellable  *cancellable,
                                         subprocess);
 
   ide_subprocess_force_exit (subprocess);
+
+  IDE_EXIT;
 }
 
 IdeSubprocessLauncher *
@@ -239,16 +247,16 @@ ide_subprocess_launcher_spawn_worker (GTask        *task,
       ide_subprocess_launcher_setenv (self, "USER", g_get_user_name (), FALSE);
     }
 
-#ifdef IDE_ENABLE_TRACE
   {
     g_autofree gchar *str = NULL;
     g_autofree gchar *env = NULL;
+
     str = g_strjoinv (" ", (gchar **)priv->argv->pdata);
     env = priv->environ ? g_strjoinv (" ", priv->environ) : g_strdup ("");
-    IDE_TRACE_MSG ("Launching '%s' from directory %s with environment %s %s parent environment",
-                   str, priv->cwd, env, priv->clear_env ? "clearing" : "inheriting");
+
+    g_debug ("Launching '%s' from directory '%s' with environment %s %s parent environment",
+             str, priv->cwd, env, priv->clear_env ? "clearing" : "inheriting");
   }
-#endif
 
   launcher = g_subprocess_launcher_new (priv->flags);
   g_subprocess_launcher_set_child_setup (launcher, child_setup_func, NULL, NULL);
@@ -672,17 +680,25 @@ ide_subprocess_launcher_overlay_environment (IdeSubprocessLauncher *self,
 
 /**
  * ide_subprocess_launcher_push_args:
- * @args: (array zero-terminated=1) (element-type utf8): the arguments
+ * @self: A #IdeSubprocessLauncher
+ * @args: (array zero-terminated=1) (element-type utf8) (nullable): the arguments
+ *
+ * This function is semantically identical to calling ide_subprocess_launcher_push_argv()
+ * for each element of @args.
+ *
+ * If @args is %NULL, this function does nothing.
  */
 void
 ide_subprocess_launcher_push_args (IdeSubprocessLauncher *self,
                                    const gchar * const   *args)
 {
   g_return_if_fail (IDE_IS_SUBPROCESS_LAUNCHER (self));
-  g_return_if_fail (args != NULL);
 
-  for (guint i = 0; args [i] != NULL; i++)
-    ide_subprocess_launcher_push_argv (self, args [i]);
+  if (args != NULL)
+    {
+      for (guint i = 0; args [i] != NULL; i++)
+        ide_subprocess_launcher_push_argv (self, args [i]);
+    }
 }
 
 gchar *

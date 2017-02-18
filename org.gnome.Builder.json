@@ -7,6 +7,8 @@
     "tags": ["devel"],
     "desktop-file-name-prefix": "(Development) ",
     "finish-args": [
+        /* Require recent flatpak at runtime */
+        "--require-version=0.8.0",
         /* Allow access to developer tools */
         "--allow=devel",
         "--talk-name=org.freedesktop.Flatpak",
@@ -210,11 +212,7 @@
                 {
                     "type": "git",
                     "url": "https://github.com/libgit2/libgit2.git",
-                    "branch": "maint/v0.24"
-                },
-                {
-                    "type": "patch",
-                    "path": "build/flatpak/0001-libgit2-http-pretend-to-be-git-1.7.patch"
+                    "branch": "maint/v0.25"
                 }
             ]
         },

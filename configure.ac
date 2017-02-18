@@ -5,8 +5,8 @@ dnl ***********************************************************************
 dnl Define Versioning Information
 dnl ***********************************************************************
 m4_define([builder_major_version],[3])
-m4_define([builder_minor_version],[22])
-m4_define([builder_micro_version],[4])
+m4_define([builder_minor_version],[23])
+m4_define([builder_micro_version],[90])
 m4_define([builder_version],[builder_major_version.builder_minor_version.builder_micro_version])
 m4_define([builder_interface_age],[0])
 m4_define([builder_bugreport_url],
@@ -42,6 +42,18 @@ AC_SUBST(MAJOR_VERSION)
 AC_SUBST(MINOR_VERSION)
 AC_SUBST(MICRO_VERSION)
 AC_SUBST(LIBIDE_VERSION)
+
+
+dnl ***********************************************************************
+dnl Check if we are building from a git checkout
+dnl ***********************************************************************
+building_from_git=no
+AS_IF([test -d "${srcdir}/.git"],[
+       building_from_git=yes
+       COMMIT_ID=`git describe --always | cut -f 2- -d -`
+       AC_DEFINE_UNQUOTED([COMMIT_ID], ["$COMMIT_ID"], [git commit suffix])
+       AC_SUBST(COMMIT_ID)
+])
 
 
 dnl ***********************************************************************
@@ -274,14 +286,13 @@ dnl ***********************************************************************
 m4_include([plugins/autotools/configure.ac])
 m4_include([plugins/autotools-templates/configure.ac])
 m4_include([plugins/beautifier/configure.ac])
-m4_include([plugins/build-tools/configure.ac])
 m4_include([plugins/c-pack/configure.ac])
 m4_include([plugins/cargo/configure.ac])
 m4_include([plugins/clang/configure.ac])
 m4_include([plugins/color-picker/configure.ac])
+m4_include([plugins/cmake/configure.ac])
 m4_include([plugins/command-bar/configure.ac])
 m4_include([plugins/comment-code/configure.ac])
-m4_include([plugins/contributing/configure.ac])
 m4_include([plugins/create-project/configure.ac])
 m4_include([plugins/ctags/configure.ac])
 m4_include([plugins/devhelp/configure.ac])
@@ -556,6 +567,7 @@ echo " ${PACKAGE} - ${VERSION}"
 echo ""
 echo " Options"
 echo ""
+echo "  Building from Git .................... : ${building_from_git}"
 echo "  Prefix ............................... : ${prefix}"
 echo "  Libdir ............................... : ${libdir}"
 echo "  Optimized Build ...................... : ${enable_optimizations}"
@@ -583,15 +595,14 @@ echo ""
 echo " Plugins"
 echo ""
 echo "  Autotools ............................ : ${enable_autotools_plugin}"
-echo "  Build Tools .......................... : ${enable_build_tools_plugin}"
 echo "  Beautifier  .......................... : ${enable_beautifier_plugin}"
 echo "  C Language Pack ...................... : ${enable_c_pack_plugin}"
 echo "  Cargo ................................ : ${enable_cargo_plugin}"
 echo "  Clang ................................ : ${enable_clang_plugin}"
+echo "  CMake ................................ : ${enable_cmake_plugin}"
 echo "  Color picker.......................... : ${enable_color_picker_plugin}"
 echo "  Command Bar .......................... : ${enable_command_bar_plugin}"
 echo "  Comment Code.......................... : ${enable_comment_code_plugin}"
-echo "  Contribute ........................... : ${enable_contributing_plugin}"
 echo "  Ctags ................................ : ${enable_ctags_plugin}"
 echo "  Devhelp .............................. : ${enable_devhelp_plugin}"
 echo "  Editorconfig ......................... : ${enable_editorconfig}"
